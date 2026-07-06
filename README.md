@@ -1,38 +1,31 @@
 # aiotransperth
 
-Async Python client for [Transperth](https://www.transperth.wa.gov.au) (Perth,
-Western Australia) bus and train departures, **with realtime delay data**.
+Live Perth bus and train departures in Python — including realtime delays.
 
-Transperth publishes no official realtime API — no GTFS-Realtime, unlike other
-Australian states. This library uses the same unofficial website APIs the
-Transperth site itself uses, which are the only channel that carries Perth
-realtime data.
+Transperth (Perth, Western Australia's public transport operator) publishes
+no official realtime API. Live delay data exists in exactly one place: the
+Transperth website itself. This library talks to the same internal endpoints
+the website uses and hands you the results as plain, typed Python objects —
+the only way to get Perth realtime data into your own code.
 
-- **Buses:** upcoming departures at any stop, with live delay status for buses
-  already on the road; route trips and full stop-by-stop trip details.
-- **Trains:** live departures for any station — every train is realtime-tracked,
-  with destination, platform, delay status, and car count.
-- Fully typed, frozen dataclass models; every datetime is timezone-aware
-  `Australia/Perth`.
+- **Buses** — upcoming departures at any stop, live delays for buses already
+  on the road, and stop-by-stop trip details.
+- **Trains** — live departures for any station: destination, platform, delay
+  status, car count.
 
-## Requirements
+Async (`aiohttp` is the only dependency), fully typed, Python 3.12+, MIT.
 
-- Python 3.12+
-- The only runtime dependency is `aiohttp`.
+## Getting started
 
-## Install
+Not on PyPI yet — install from a checkout:
 
 ```bash
-pip install aiotransperth
+git clone https://github.com/Chris112/aiotransperth
+cd aiotransperth
+pip install .
 ```
 
-Or straight from source:
-
-```bash
-pip install git+https://github.com/Chris112/aiotransperth
-```
-
-## Quick start
+Then:
 
 ```python
 import asyncio
@@ -111,8 +104,8 @@ own session, which will not be closed for you.
 | `get_route_trips(route, *, when=None, max_options=4)` | `tuple[RouteTrip, ...]` | Upcoming trips for a route, e.g. `"414"`. |
 | `get_trip_stops(trip)` | `tuple[TripStop, ...]` | Every stop on a trip, with times, boarding flags, GPS. |
 | `get_train_departures(line, station)` | `tuple[TrainDeparture, ...]` | Live status; raises `InvalidStopError` for unknown stations. |
-| `get_train_lines()` | `tuple[str, ...]` | The 8 line names. |
-| `get_train_stations()` | `tuple[TrainStation, ...]` | All ~80 stations. |
+| `get_train_lines()` | `tuple[str, ...]` | The 8 line names. Fetched once, cached per client. |
+| `get_train_stations()` | `tuple[TrainStation, ...]` | All ~80 stations. Fetched once, cached per client. |
 
 Departure models share a core: `scheduled` and `estimated` (aware datetimes;
 `estimated` is `None` when not live), `live` (a `LiveStatus` with `is_live`,
@@ -138,6 +131,8 @@ refresh on HTTP 401 — back-off policy belongs to the caller.
 
 - This is an **unofficial** API; Transperth can change or break it without
   notice. A `-m live` contract test suite pins the shapes this library reads.
+- Individual departures the API garbles are skipped, not raised — a response
+  with one malformed entry still returns the rest.
 - Bus realtime only lights up for vehicles already on the road — usually the
   next imminent departure. Everything else is scheduled times.
 - The bus timetable endpoint self-caps its response window (~2 hours of
@@ -152,6 +147,9 @@ pytest                # offline tests only (fixtures, no network)
 pytest -m live        # contract tests against the real API — run sparingly
 ruff check src tests && mypy src
 ```
+
+The package version lives in `src/aiotransperth/__init__.py` (`__version__`);
+`pyproject.toml` reads it from there, so bump it in one place only.
 
 ## License
 
