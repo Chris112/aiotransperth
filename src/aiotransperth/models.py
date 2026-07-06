@@ -9,6 +9,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from enum import StrEnum
+from typing import Any
 from zoneinfo import ZoneInfo
 
 PERTH_TZ = ZoneInfo("Australia/Perth")
@@ -77,3 +78,85 @@ class TrainStation:
 
     id: str
     name: str
+
+
+@dataclass(frozen=True, slots=True)
+class BusDeparture:
+    """One upcoming bus at a stop."""
+
+    route: str
+    headsign: str
+    destination: str
+    origin: str
+    scheduled: datetime
+    estimated: datetime | None
+    live: LiveStatus
+    trip_uid: str
+    mode: Mode = Mode.BUS
+
+    @property
+    def delay_minutes(self) -> int | None:
+        """Minutes behind schedule (negative = early); None when not live."""
+        if self.estimated is None:
+            return None
+        return round((self.estimated - self.scheduled).total_seconds() / 60)
+
+    @classmethod
+    def from_api(cls, entry: dict[str, Any]) -> BusDeparture:
+        """Parse one GetStopTimetableAsync trips[] entry.
+
+        Raises ValueError when the entry has no usable departure time.
+        """
+        summary = entry.get("Summary") or {}
+        time_str = entry.get("DepartTime") or entry.get("ArriveTime") or ""
+        scheduled = parse_iso_perth(time_str)
+        is_live = bool(entry.get("IsRealTime"))
+        estimated = (
+            parse_clock_near(entry.get("DisplayTripStatus") or "", scheduled)
+            if is_live
+            else None
+        )
+        live = (
+            LiveStatus(
+                is_live=True,
+                status_code=entry.get("RealTimeStopStatus"),
+                description=entry.get("RealTimeStopStatusDetail") or "",
+            )
+            if is_live
+            else NOT_LIVE
+        )
+        return cls(
+            route=summary.get("RouteCode", ""),
+            headsign=summary.get("Headsign", ""),
+            destination=(entry.get("Destination") or {}).get("Name", ""),
+            origin=(entry.get("Origin") or {}).get("Name", ""),
+            scheduled=scheduled,
+            estimated=estimated,
+            live=live,
+            trip_uid=summary.get("TripUid", ""),
+        )
+
+
+@dataclass(frozen=True, slots=True)
+class StopTimetable:
+    """A stop plus its upcoming departures."""
+
+    stop: Stop
+    departures: tuple[BusDeparture, ...]
+
+    @classmethod
+    def from_api(cls, body: dict[str, Any]) -> StopTimetable:
+        """Parse a full GetStopTimetableAsync response; skips malformed trips."""
+        stop_raw = body.get("stop") or {}
+        stop = Stop(
+            code=stop_raw.get("Code", ""),
+            name=stop_raw.get("Description", ""),
+            zone=stop_raw.get("Zone"),
+        )
+        departures = []
+        for entry in body.get("trips") or []:
+            try:
+                departures.append(BusDeparture.from_api(entry))
+            except ValueError:
+                continue
+        return cls(stop=stop, departures=tuple(departures))

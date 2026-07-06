@@ -1,0 +1,46 @@
+{
+  "result": "success",
+  "trips": [
+    {
+      "ArriveTime": "2026-07-06T13:45",
+      "DepartTime": "2026-07-06T13:45",
+      "Summary": {
+        "Mode": "Bus",
+        "Direction": "0",
+        "TripUid": "PerthRestricted:6974136",
+        "RouteCode": "402",
+        "Headsign": "Perth Busport"
+      },
+      "Origin": {"Code": "11538", "Name": "Stirling Stn Stand 2"},
+      "Destination": {"Code": "27172", "Name": "Perth Busport Zone B"},
+      "IsRealTime": true,
+      "RealTimeStopStatus": 2,
+      "RealTimeStopStatusDetail": "3 min delay",
+      "DisplayTripStatus": "1:48pm"
+    },
+    {
+      "ArriveTime": "2026-07-06T14:19",
+      "DepartTime": "2026-07-06T14:19",
+      "Summary": {
+        "Direction": "0",
+        "TripUid": "PerthRestricted:6423558",
+        "RouteCode": "414",
+        "Headsign": "Glendalough Stn"
+      },
+      "Origin": {"Code": "11538", "Name": "Stirling Stn Stand 2"},
+      "Destination": {"Code": "27117", "Name": "Scarborough Beach Rd Stand 8"},
+      "IsRealTime": false,
+      "RealTimeStopStatus": -1,
+      "RealTimeStopStatusDetail": "Not Available",
+      "DisplayTripStatus": "2:19pm"
+    },
+    {
+      "Summary": {"RouteCode": "999"}
+    }
+  ],
+  "stop": {
+    "Code": "12627",
+    "Description": "Main St After Lawley St",
+    "Zone": "1"
+  }
+}
