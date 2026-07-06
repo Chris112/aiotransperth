@@ -33,6 +33,25 @@ async def test_get_train_departures() -> None:
     assert deps[1].delay_minutes == 4
 
 
+async def test_get_train_departures_skips_malformed_entries() -> None:
+    good = FIXTURE["data"]["StatusDetailList"][0]
+    missing_schedule = {k: v for k, v in good.items() if k != "TripStopSchedule"}
+    garbage_schedule = {**good, "TripStopSchedule": "not a date"}
+    payload = {
+        "result": "success",
+        "data": {
+            "Station": "Maylands Stn",
+            "StatusDetailList": [missing_schedule, good, garbage_schedule],
+        },
+    }
+    with aioresponses() as mock:
+        mock.get(_status_url("Midland Line", "Maylands Stn"), payload=payload)
+        async with TransperthClient() as client:
+            deps = await client.get_train_departures("Midland Line", "Maylands Stn")
+    assert len(deps) == 1
+    assert deps[0].destination == "Perth"
+
+
 async def test_unknown_station_raises_invalid_stop() -> None:
     bad = {
         "result": "success",

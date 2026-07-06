@@ -241,10 +241,13 @@ class TransperthClient:
             raise InvalidStopError(
                 f"Transperth does not know station {station!r} on {line!r}"
             )
-        return tuple(
-            TrainDeparture.from_api(entry)
-            for entry in data.get("StatusDetailList") or []
-        )
+        departures = []
+        for entry in data.get("StatusDetailList") or []:
+            try:
+                departures.append(TrainDeparture.from_api(entry))
+            except (KeyError, ValueError):
+                continue
+        return tuple(departures)
 
     async def get_train_lines(self) -> tuple[str, ...]:
         """All train line names, parsed from the Live Train Times page."""
