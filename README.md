@@ -29,7 +29,7 @@ pip install aiotransperth
 Or straight from source:
 
 ```bash
-pip install git+https://github.com/cjwebb90/aiotransperth
+pip install git+https://github.com/Chris112/aiotransperth
 ```
 
 ## Quick start
