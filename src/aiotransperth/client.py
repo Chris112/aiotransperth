@@ -186,12 +186,15 @@ class TransperthClient:
     async def get_trip_stops(self, trip: RouteTrip) -> tuple[TripStop, ...]:
         """Every stop on a trip; retries the opposite direction on null data."""
         opposite = "inbound" if trip.direction == "outbound" else "outbound"
+        # start_time is already rolled past midnight when needed; trip.date
+        # is only the query moment and can lag a day behind.
+        trip_date = trip.start_time or trip.date
         payload: dict[str, Any] | None = None
         for direction in (trip.direction, opposite):
             data = {
                 "RouteUid": trip.route_uid,
                 "TripUid": trip.trip_key,
-                "TripDate": trip.date.strftime("%Y-%m-%d"),
+                "TripDate": trip_date.strftime("%Y-%m-%d"),
                 "TripDirection": direction,
                 "ReturnNoteCodes": NOTE_CODES,
             }
