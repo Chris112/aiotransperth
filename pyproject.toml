@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "aiotransperth"
-version = "0.1.0"
+dynamic = ["version"]
 description = "Async Python client for Transperth (Perth, WA) bus and train departures, with realtime data"
 readme = "README.md"
 license = "MIT"
@@ -23,6 +23,10 @@ dev = [
   "ruff>=0.7",
   "mypy>=1.11",
 ]
+
+[tool.hatch.version]
+# Single source of truth: __version__ in the package.
+path = "src/aiotransperth/__init__.py"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

@@ -1,5 +1,8 @@
 name: Release
 
+# One-time setup before this works: on pypi.org, add a "trusted publisher"
+# for this repo (workflow: release.yml, environment: pypi), and create a
+# GitHub environment named "pypi" in the repo settings. No API token needed.
 on:
   release:
     types: [published]
