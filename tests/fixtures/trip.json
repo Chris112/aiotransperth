@@ -1,0 +1,39 @@
+{
+  "result": "success",
+  "data": {
+    "TripUid": "PerthRestricted:6423575",
+    "Direction": "0",
+    "Headsign": "Glendalough Stn",
+    "RouteUid": "PerthRestricted:SWA-MAR-2504",
+    "TripStopTimings": [
+      {
+        "ArrivalTime": "",
+        "DepartTime": "23:08",
+        "CanAlight": false,
+        "CanBoard": true,
+        "IsTimingPoint": true,
+        "Stop": {
+          "Code": "29720",
+          "Description": "Stirling Stn Stand B",
+          "Latitude": "-31.893531",
+          "Longitude": "115.805214",
+          "Zone": "2"
+        }
+      },
+      {
+        "ArrivalTime": "23:19",
+        "DepartTime": "23:19",
+        "CanAlight": true,
+        "CanBoard": true,
+        "IsTimingPoint": false,
+        "Stop": {
+          "Code": "12628",
+          "Description": "Main St After Lawley St",
+          "Latitude": "-31.901233",
+          "Longitude": "115.82839",
+          "Zone": "1"
+        }
+      }
+    ]
+  }
+}

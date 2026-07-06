@@ -15,9 +15,11 @@ from .const import (
     DEFAULT_TIMEOUT,
     LIVE_TRAIN_TIMES_PAGE,
     NOTE_CODES,
+    OPTIONS_URL,
     STOP_TIMETABLE_URL,
     TRAIN_HEADERS,
     TRAIN_STATUS_URL_TEMPLATE,
+    TRIP_URL,
     USER_AGENT,
 )
 from .exceptions import (
@@ -27,7 +29,16 @@ from .exceptions import (
     RateLimitError,
     TransperthError,
 )
-from .models import PERTH_TZ, Stop, StopTimetable, TrainDeparture, TrainStation
+from .models import (
+    PERTH_TZ,
+    RouteTrip,
+    Stop,
+    StopTimetable,
+    TrainDeparture,
+    TrainStation,
+    TripStop,
+    parse_clock_near,
+)
 from .stations import parse_lines, parse_stations
 
 
@@ -138,6 +149,75 @@ class TransperthClient:
         """Check a stop code exists; return its metadata or raise InvalidStopError."""
         timetable = await self.get_stop_timetable(stop_code, max_trips=1)
         return timetable.stop
+
+    async def get_route_trips(
+        self, route: str, *, when: datetime | None = None, max_options: int = 4
+    ) -> tuple[RouteTrip, ...]:
+        """Upcoming trips for a bus route, from the given moment onward."""
+        moment = when.astimezone(PERTH_TZ) if when else datetime.now(tz=PERTH_TZ)
+        data = {
+            "ExactlyMatchedRouteOnly": "true",
+            "Mode": "bus",
+            "Route": route,
+            "QryDate": moment.strftime("%Y-%m-%d"),
+            "QryTime": moment.strftime("%H:%M"),
+            "MaxOptions": str(max_options),
+        }
+        body = await self._bus_post(AuthContext.ROUTE, route, OPTIONS_URL, data)
+        payload = body.get("data") or {}
+        direction = str(payload.get("Direction") or "outbound")
+        trips = []
+        for opt in payload.get("Options") or []:
+            trips.append(
+                RouteTrip(
+                    route=route,
+                    trip_key=opt.get("TripKey", ""),
+                    route_uid=opt.get("RouteUid", ""),
+                    direction=direction,
+                    date=moment,
+                    start_time=parse_clock_near(opt.get("StartTime") or "", moment),
+                    finish_time=parse_clock_near(opt.get("FinishTime") or "", moment),
+                    start_location=opt.get("StartLocation", ""),
+                    finish_location=opt.get("FinishLocation", ""),
+                )
+            )
+        return tuple(trips)
+
+    async def get_trip_stops(self, trip: RouteTrip) -> tuple[TripStop, ...]:
+        """Every stop on a trip; retries the opposite direction on null data."""
+        opposite = "inbound" if trip.direction == "outbound" else "outbound"
+        payload: dict[str, Any] | None = None
+        for direction in (trip.direction, opposite):
+            data = {
+                "RouteUid": trip.route_uid,
+                "TripUid": trip.trip_key,
+                "TripDate": trip.date.strftime("%Y-%m-%d"),
+                "TripDirection": direction,
+                "ReturnNoteCodes": NOTE_CODES,
+            }
+            body = await self._bus_post(AuthContext.ROUTE, trip.route, TRIP_URL, data)
+            payload = body.get("data")
+            if payload:
+                break
+        if not payload:
+            return ()
+        stops = []
+        for timing in payload.get("TripStopTimings") or []:
+            stop = timing.get("Stop") or {}
+            stops.append(
+                TripStop(
+                    code=stop.get("Code", ""),
+                    name=stop.get("Description", ""),
+                    time=timing.get("DepartTime") or timing.get("ArrivalTime") or "",
+                    can_board=bool(timing.get("CanBoard")),
+                    can_alight=bool(timing.get("CanAlight")),
+                    is_timing_point=bool(timing.get("IsTimingPoint")),
+                    zone=stop.get("Zone"),
+                    latitude=stop.get("Latitude"),
+                    longitude=stop.get("Longitude"),
+                )
+            )
+        return tuple(stops)
 
     async def get_train_departures(
         self, line: str, station: str

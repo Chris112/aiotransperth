@@ -1,0 +1,20 @@
+{
+  "result": "success",
+  "data": {
+    "TransportMode": "bus",
+    "Direction": "outbound",
+    "Options": [
+      {
+        "Index": 1,
+        "StartLocation": "Stirling Stn Stand B",
+        "StartTime": "11:08 PM",
+        "IsStartNextDay": false,
+        "FinishTime": "11:27 PM",
+        "IsFinishNextDay": false,
+        "FinishLocation": "Scarborough Beach Rd Stand 8",
+        "RouteUid": "PerthRestricted:SWA-MAR-2504",
+        "TripKey": "PerthRestricted:6423575"
+      }
+    ]
+  }
+}

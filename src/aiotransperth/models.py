@@ -138,6 +138,40 @@ class BusDeparture:
 
 
 @dataclass(frozen=True, slots=True)
+class RouteTrip:
+    """One upcoming trip of a bus route (from GetTimetableOptionsAsync)."""
+
+    route: str
+    trip_key: str
+    route_uid: str
+    direction: str  # "outbound" | "inbound"
+    date: datetime  # the query date the trip belongs to (aware, Perth)
+    start_time: datetime | None
+    finish_time: datetime | None
+    start_location: str
+    finish_location: str
+
+
+@dataclass(frozen=True, slots=True)
+class TripStop:
+    """One stop on a bus trip (from GetTimetableTripAsync).
+
+    time is the schedule's 'HH:MM' string ('' at terminals for the
+    direction a passenger can't use).
+    """
+
+    code: str
+    name: str
+    time: str
+    can_board: bool
+    can_alight: bool
+    is_timing_point: bool
+    zone: str | None
+    latitude: str | None
+    longitude: str | None
+
+
+@dataclass(frozen=True, slots=True)
 class TrainDeparture:
     """One upcoming train at a station."""
 
