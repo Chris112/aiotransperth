@@ -138,6 +138,61 @@ class BusDeparture:
 
 
 @dataclass(frozen=True, slots=True)
+class TrainDeparture:
+    """One upcoming train at a station."""
+
+    line: str
+    destination: str
+    platform: str
+    scheduled: datetime
+    estimated: datetime | None
+    live: LiveStatus
+    cars: int | None
+    pattern: str
+    trip_id: int
+    mode: Mode = Mode.TRAIN
+
+    @property
+    def delay_minutes(self) -> int | None:
+        """Minutes behind schedule (negative = early); None when not live."""
+        if self.estimated is None:
+            return None
+        return round((self.estimated - self.scheduled).total_seconds() / 60)
+
+    @classmethod
+    def from_api(cls, entry: dict[str, Any]) -> TrainDeparture:
+        """Parse one GetStationLiveStatusAsync StatusDetailList[] entry."""
+        scheduled = datetime.strptime(
+            entry["TripStopSchedule"], "%d/%m/%Y %H:%M:%S"
+        ).replace(tzinfo=PERTH_TZ)
+        is_live = bool(entry.get("IsRealTime"))
+        estimated = (
+            parse_clock_near(entry.get("Departure") or "", scheduled)
+            if is_live
+            else None
+        )
+        try:
+            cars: int | None = int(entry.get("Ncar") or "")
+        except ValueError:
+            cars = None
+        return cls(
+            line=entry.get("LineName", ""),
+            destination=entry.get("Destination", ""),
+            platform=entry.get("Platform", ""),
+            scheduled=scheduled,
+            estimated=estimated,
+            live=LiveStatus(
+                is_live=is_live,
+                status_code=entry.get("Status"),
+                description=entry.get("StatusDetail") or "",
+            ),
+            cars=cars,
+            pattern=entry.get("Pattern", ""),
+            trip_id=int(entry.get("TripId") or 0),
+        )
+
+
+@dataclass(frozen=True, slots=True)
 class StopTimetable:
     """A stop plus its upcoming departures."""
 

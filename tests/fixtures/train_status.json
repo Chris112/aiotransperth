@@ -1,0 +1,37 @@
+{
+  "result": "success",
+  "data": {
+    "Station": "Maylands Stn",
+    "LastUpdated": "06/07/2026 at 13:58:15",
+    "StatusDetailList": [
+      {
+        "IsRealTime": true,
+        "TripId": 6941457,
+        "Departure": "14:06",
+        "Destination": "Perth",
+        "Pattern": "",
+        "Platform": "1",
+        "LineName": "Midland Line",
+        "Ncar": "4",
+        "Series": "A",
+        "Status": 1,
+        "StatusDetail": "On Time",
+        "TripStopSchedule": "06/07/2026 14:06:00"
+      },
+      {
+        "IsRealTime": true,
+        "TripId": 6880212,
+        "Departure": "14:08",
+        "Destination": "Midland",
+        "Pattern": "",
+        "Platform": "2",
+        "LineName": "Midland Line",
+        "Ncar": "6",
+        "Series": "B",
+        "Status": 2,
+        "StatusDetail": "4 mins Delayed",
+        "TripStopSchedule": "06/07/2026 14:04:00"
+      }
+    ]
+  }
+}
