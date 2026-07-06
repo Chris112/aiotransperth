@@ -3,19 +3,22 @@
 from __future__ import annotations
 
 import json
+from datetime import datetime
 from types import TracebackType
 from typing import Any, Self
 
 import aiohttp
 
 from .auth import AuthContext, TokenManager, bus_headers
-from .const import DEFAULT_TIMEOUT
+from .const import DEFAULT_TIMEOUT, NOTE_CODES, STOP_TIMETABLE_URL
 from .exceptions import (
     AuthError,
+    InvalidStopError,
     NetworkError,
     RateLimitError,
     TransperthError,
 )
+from .models import PERTH_TZ, Stop, StopTimetable
 
 
 class TransperthClient:
@@ -93,6 +96,38 @@ class TransperthClient:
                 raise TransperthError(f"API result={body.get('result')!r} from {url}")
             return body
         raise AuthError("Unreachable: 401 retry loop exhausted")  # pragma: no cover
+
+    async def get_stop_timetable(
+        self,
+        stop_code: str,
+        *,
+        when: datetime | None = None,
+        max_trips: int = 100,
+    ) -> StopTimetable:
+        """Upcoming departures at a bus stop, realtime included.
+
+        The API self-caps the response window (~2 h); large max_trips is safe.
+        """
+        moment = when.astimezone(PERTH_TZ) if when else datetime.now(tz=PERTH_TZ)
+        data = {
+            "StopNumber": stop_code,
+            "SearchDate": moment.strftime("%Y-%m-%d"),
+            "SearchTime": moment.strftime("%H:%M"),
+            "IsRealTimeChecked": "true",
+            "ReturnNoteCodes": NOTE_CODES,
+            "MaxTripCount": str(max_trips),
+        }
+        body = await self._bus_post(
+            AuthContext.STOP, stop_code, STOP_TIMETABLE_URL, data
+        )
+        if not body.get("stop"):
+            raise InvalidStopError(f"Transperth does not know stop {stop_code!r}")
+        return StopTimetable.from_api(body)
+
+    async def validate_stop(self, stop_code: str) -> Stop:
+        """Check a stop code exists; return its metadata or raise InvalidStopError."""
+        timetable = await self.get_stop_timetable(stop_code, max_trips=1)
+        return timetable.stop
 
     async def _get(self, url: str, headers: dict[str, str]) -> str:
         """Plain GET returning the body text (train endpoints, catalog page)."""
