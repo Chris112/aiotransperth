@@ -79,3 +79,14 @@ async def test_get_train_lines_and_stations() -> None:
             stations = await client.get_train_stations()
     assert "Midland Line" in lines and len(lines) == 8
     assert any(s.name == "Maylands Stn" for s in stations)
+
+
+async def test_train_catalog_page_fetched_once() -> None:
+    # One registered response only: a second GET would find no mock and fail.
+    with aioresponses() as mock:
+        mock.get(LIVE_TRAIN_TIMES_PAGE, body=PAGE_HTML)
+        async with TransperthClient() as client:
+            lines = await client.get_train_lines()
+            stations = await client.get_train_stations()
+    assert len(lines) == 8
+    assert len(stations) > 0

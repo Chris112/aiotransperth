@@ -59,6 +59,7 @@ class TransperthClient:
         self._owns_session = session is None
         self._timeout = aiohttp.ClientTimeout(total=request_timeout)
         self._tokens = TokenManager()
+        self._catalog_html: str | None = None
 
     async def __aenter__(self) -> Self:
         return self
@@ -254,13 +255,19 @@ class TransperthClient:
 
     async def get_train_lines(self) -> tuple[str, ...]:
         """All train line names, parsed from the Live Train Times page."""
-        html = await self._get(LIVE_TRAIN_TIMES_PAGE, {"User-Agent": USER_AGENT})
-        return parse_lines(html)
+        return parse_lines(await self._catalog_page())
 
     async def get_train_stations(self) -> tuple[TrainStation, ...]:
         """All train stations, parsed from the Live Train Times page."""
-        html = await self._get(LIVE_TRAIN_TIMES_PAGE, {"User-Agent": USER_AGENT})
-        return parse_stations(html)
+        return parse_stations(await self._catalog_page())
+
+    async def _catalog_page(self) -> str:
+        """The Live Train Times page HTML, fetched once per client."""
+        if self._catalog_html is None:
+            self._catalog_html = await self._get(
+                LIVE_TRAIN_TIMES_PAGE, {"User-Agent": USER_AGENT}
+            )
+        return self._catalog_html
 
     async def _get(self, url: str, headers: dict[str, str]) -> str:
         """Plain GET returning the body text (train endpoints, catalog page)."""
