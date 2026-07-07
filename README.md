@@ -17,12 +17,8 @@ Async (`aiohttp` is the only dependency), fully typed, Python 3.12+, MIT.
 
 ## Getting started
 
-Not on PyPI yet — install from a checkout:
-
 ```bash
-git clone https://github.com/Chris112/aiotransperth
-cd aiotransperth
-pip install .
+pip install aiotransperth
 ```
 
 Then:
