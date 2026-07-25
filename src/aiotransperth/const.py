@@ -26,4 +26,16 @@ TRAIN_HEADERS = {
 # Service-note codes the Transperth website sends; responses index into them.
 NOTE_CODES = "DV,LM,CM,TC,BG,FG,LK"
 
+# Perth's city interchanges. A train service leaves its line only by running
+# through the centre, so these anchor direction when a service terminates
+# somewhere off the line entirely. See `lines.serves_journey`.
+CBD_STATIONS = frozenset(
+    {
+        "Perth Stn",
+        "Perth Underground Stn",
+        "Elizabeth Quay Stn",
+        "McIver Stn",
+    }
+)
+
 DEFAULT_TIMEOUT = 15.0

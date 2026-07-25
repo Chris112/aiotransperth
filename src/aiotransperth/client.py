@@ -60,6 +60,7 @@ class TransperthClient:
         self._timeout = aiohttp.ClientTimeout(total=request_timeout)
         self._tokens = TokenManager()
         self._catalog_html: str | None = None
+        self._line_html: dict[str, str] = {}
 
     async def __aenter__(self) -> Self:
         return self
@@ -152,13 +153,25 @@ class TransperthClient:
         return timetable.stop
 
     async def get_route_trips(
-        self, route: str, *, when: datetime | None = None, max_options: int = 4
+        self,
+        route: str,
+        *,
+        mode: str = "bus",
+        when: datetime | None = None,
+        max_options: int = 4,
     ) -> tuple[RouteTrip, ...]:
-        """Upcoming trips for a bus route, from the given moment onward."""
+        """Upcoming trips for a route, from the given moment onward.
+
+        `mode` is the API's own spelling: "bus", or "rail" for train lines,
+        where `route` is the full line name ("Yanchep Line" — "Yanchep" alone
+        returns nothing). A rail trip's stop list is the whole line in route
+        order, which is how `scripts/generate_line_order.py` builds its table
+        without crawling every station.
+        """
         moment = when.astimezone(PERTH_TZ) if when else datetime.now(tz=PERTH_TZ)
         data = {
             "ExactlyMatchedRouteOnly": "true",
-            "Mode": "bus",
+            "Mode": mode,
             "Route": route,
             "QryDate": moment.strftime("%Y-%m-%d"),
             "QryTime": moment.strftime("%H:%M"),
@@ -257,9 +270,19 @@ class TransperthClient:
         """All train line names, parsed from the Live Train Times page."""
         return parse_lines(await self._catalog_page())
 
-    async def get_train_stations(self) -> tuple[TrainStation, ...]:
-        """All train stations, parsed from the Live Train Times page."""
-        return parse_stations(await self._catalog_page())
+    async def get_train_stations(self, line: str | None = None) -> tuple[
+        TrainStation, ...
+    ]:
+        """Train stations, parsed from the Live Train Times page.
+
+        With no `line`, returns the whole catalog. With a line, returns only
+        that line's stations — the site renders a line-scoped page whose
+        station dropdown is already filtered. Either way the order is the
+        page's own (alphabetical), not route order; see `lines.py` for that.
+        """
+        if line is None:
+            return parse_stations(await self._catalog_page())
+        return parse_stations(await self._line_page(line))
 
     async def _catalog_page(self) -> str:
         """The Live Train Times page HTML, fetched once per client."""
@@ -268,6 +291,15 @@ class TransperthClient:
                 LIVE_TRAIN_TIMES_PAGE, {"User-Agent": USER_AGENT}
             )
         return self._catalog_html
+
+    async def _line_page(self, line: str) -> str:
+        """The line-scoped Live Train Times page, fetched once per line."""
+        if line not in self._line_html:
+            self._line_html[line] = await self._get(
+                f"{LIVE_TRAIN_TIMES_PAGE}/{quote(line, safe='')}",
+                {"User-Agent": USER_AGENT},
+            )
+        return self._line_html[line]
 
     async def _get(self, url: str, headers: dict[str, str]) -> str:
         """Plain GET returning the body text (train endpoints, catalog page)."""

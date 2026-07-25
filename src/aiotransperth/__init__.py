@@ -8,6 +8,13 @@ from .exceptions import (
     RateLimitError,
     TransperthError,
 )
+from .lines import (
+    is_known_journey,
+    known_lines,
+    line_endpoints,
+    line_stations,
+    serves_journey,
+)
 from .models import (
     PERTH_TZ,
     BusDeparture,
@@ -21,7 +28,7 @@ from .models import (
     TripStop,
 )
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 
 __all__ = [
     "PERTH_TZ",
@@ -40,4 +47,9 @@ __all__ = [
     "TransperthClient",
     "TransperthError",
     "TripStop",
+    "is_known_journey",
+    "known_lines",
+    "line_endpoints",
+    "line_stations",
+    "serves_journey",
 ]

@@ -7,3 +7,6 @@ dist/
 .mypy_cache/
 .ruff_cache/
 .claude/settings.local.json
+
+# Crawl cache for scripts/generate_line_order.py
+scripts/.line_order_cache.json

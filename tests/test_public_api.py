@@ -19,6 +19,10 @@ def test_public_surface() -> None:
         "AuthError",
         "NetworkError",
         "InvalidStopError",
+        "serves_journey",
+        "line_stations",
+        "line_endpoints",
+        "is_known_journey",
     ):
         assert hasattr(aiotransperth, name), name
-    assert aiotransperth.__version__ == "0.1.0"
+    assert aiotransperth.__version__ == "0.2.0"
